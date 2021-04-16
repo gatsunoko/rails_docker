@@ -1,0 +1,66 @@
+version: '3'
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      TZ: Asia/Tokyo
+    ports:
+      - '3306:3306'
+    command: --default-authentication-plugin=mysql_native_password
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql-confd:/etc/mysql/conf.d
+    restart: always
+  app:
+    build: .
+    command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails s -p 3000 -b '0.0.0.0'"
+    volumes:
+      - .:/GatsuRails
+      - bundle_path:/bundle
+    depends_on:
+      - db
+    stdin_open: true
+    tty: true
+    env_file:
+      - ./.env
+    environment:
+      BUNDLE_PATH: /bundle
+      TZ: Asia/Tokyo
+    restart: always
+  web:
+    build:
+      context: ./docker/web_letsEncrypt
+    environment:
+      TZ: Asia/Tokyo
+    ports:
+      - '4000:4000'
+    volumes:
+      - ./log/nginx:/var/log/nginx
+    depends_on:
+      - app
+    env_file:
+      - ./.env
+    logging:
+      options:
+        max-size: 10m
+        max-file: '10'
+    user: root
+    restart: always
+  https-portal:
+    image: steveltn/https-portal:1.5.1
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      STAGE: production
+      DOMAINS: '${DOMAIN} -> http://web:4000'
+      CLIENT_MAX_BODY_SIZE: 50M
+    volumes:
+      - https-portal:/var/lib/https-portal
+    restart: always
+volumes:
+  mysql-data:
+    driver: local
+  bundle_path:
+  https-portal:
