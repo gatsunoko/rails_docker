@@ -36,7 +36,7 @@ production:
   <<: *default
   database: projectname_production
 ```
-に変更した後
+に変更
 ```
 $docker-compose run --rm app rails db:create
 $docker-compose run --rm app rails db:migrate
