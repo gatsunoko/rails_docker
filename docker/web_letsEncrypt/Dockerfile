@@ -1,3 +1,3 @@
-FROM nginx:1.19.3
+FROM nginx:1.30
 
 COPY nginx /etc/nginx
